@@ -4,7 +4,12 @@
 8 absolute encoders with fixed labels, parameter names and CC numbers.
 
 Signal flow per encoder:
-    [live.dial <Label>] -> [t b i] -> [pack 176 <cc> 0] -> [iter] -> [midiout]
+    [live.dial <Label>] -> [change] -> [gate 1 0] -> [t b i]
+        -> [pack 176 <cc> 0] -> [iter] -> [midiout]
+
+All gates start closed and open 250 ms after [live.thisdevice] signals that the
+device has loaded, so values restored at load are never sent. [change] drops
+repeated values, so a message goes out only when an encoder's value changes.
 
 Status byte 176 (0xB0) = Control Change on channel 1. In a MIDI Effect, Live
 routes the device output through the track, so the track's MIDI To routing /
@@ -72,6 +77,15 @@ midiin = newobj("midiin", [20, 20, 45, 22], 1, 1, ["int"])
 midiout = newobj("midiout", [20, 400, 55, 22], 1, 0, [])
 connect(midiin, 0, midiout, 0)
 
+# ---------------------------------------------------------------- load gate
+# Live restores/initializes dial values while the device loads. The gates stay
+# closed until 250 ms after [live.thisdevice] reports the device is loaded.
+thisdev = newobj("live.thisdevice", [1250, 20, 90, 22], 1, 3, ["bang", "int", "int"])
+delay = newobj("delay 250", [1250, 50, 60, 22], 2, 1, ["bang"])
+open_gate = newobj("t 1", [1250, 80, 30, 22], 1, 1, ["int"])
+connect(thisdev, 0, delay, 0)
+connect(delay, 0, open_gate, 0)
+
 # ---------------------------------------------------------------- encoders
 for i, (label, cc) in enumerate(ENCODERS):
     px = 100 + i * 140             # patching x
@@ -84,7 +98,7 @@ for i, (label, cc) in enumerate(ENCODERS):
     dial = add_box(
         maxclass="live.dial", varname=label,
         patching_rect=[px, 90, 44, 48], presentation=1,
-        presentation_rect=[vx + (COL_W - 8 - 44) / 2, y0 + 16, 44, 44],
+        presentation_rect=[vx + (COL_W - 8 - 48) / 2, y0 + 18, 48, 54],
         numinlets=1, numoutlets=2, outlettype=["", "float"],
         parameter_enable=1, showname=0, shownumber=1,
         activedialcolor=ACCENT,
@@ -94,19 +108,24 @@ for i, (label, cc) in enumerate(ENCODERS):
             "parameter_type": 1,           # int
             "parameter_mmin": 0.0,
             "parameter_mmax": 127.0,
-            "parameter_initial_enable": 1,
+            "parameter_initial_enable": 0,  # don't force a value on load
             "parameter_initial": [0],
             "parameter_unitstyle": 0,      # Int
         }},
     )
 
-    comment(f"CC {cc}", [px, 150, 50, 18], [vx - 2, y0 + 61, COL_W - 4, 16], DIM, 9.0)
+    # only changed values pass; nothing passes until the load gate opens
+    chg = newobj("change", [px, 150, 50, 22], 1, 3, ["", "int", "int"])
+    gate = newobj("gate 1 0", [px, 180, 50, 22], 2, 1, [""])
+    connect(dial, 0, chg, 0)
+    connect(chg, 0, gate, 1)
+    connect(open_gate, 0, gate, 0)
 
     # CC message: 176 (0xB0) <cc> <value>
-    trig = newobj("t b i", [px, 200, 40, 22], 1, 2, ["bang", "int"])
-    pack = newobj(f"pack 176 {cc} 0", [px, 240, 90, 22], 3, 1)
+    trig = newobj("t b i", [px, 220, 40, 22], 1, 2, ["bang", "int"])
+    pack = newobj(f"pack 176 {cc} 0", [px, 250, 90, 22], 3, 1)
     it = newobj("iter", [px, 280, 34, 22], 1, 1, ["int"])
-    connect(dial, 0, trig, 0)
+    connect(gate, 0, trig, 0)
     connect(trig, 1, pack, 2)        # value first (right-to-left order)
     connect(trig, 0, pack, 0)        # then bang -> output list
     connect(pack, 0, it, 0)

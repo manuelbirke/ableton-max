@@ -31,11 +31,12 @@ The parameter long name and short name both match the label. Push shows these na
 3. Set the track's **MIDI To** to your TEO-5 or other destination, along with the channel you want.
 
 ## Usage
-- Turning a dial sends `CC <n> <value>`, where the value runs from 0 to 127.
+- Turning a dial sends `CC <n> <value>`, where the value runs from 0 to 127. Each encoder shows only its name and its current value; there are no CC labels on the device.
+- **No output on load:** every encoder goes through `[change] -> [gate]`. The gates stay closed until 250 ms after `[live.thisdevice]` reports the device has loaded. Values Live restores when the device or Set loads are therefore not sent. After that, a message goes out only when an encoder's value actually changes; repeated identical values are dropped.
 - **MIDI channel:** there is no channel control. The device sends status `0xB0` through `midiout`. Live passes the output through the track, so the track's MIDI routing decides where it goes. Incoming MIDI passes through unchanged.
 - The dials can be automated and are saved with the Live Set.
 
 ## Not verified (no Ableton Live or Max here)
-- The device has **not been opened in Live or Max**. What was checked: the container header, valid JSON, every patch cord pointing at an existing inlet or outlet, the 8 names and CC numbers, and the layout fitting the 169 px device height.
-- When a Set loads, Live restores each dial and may send its stored CC value once.
+- The device has **not been opened in Live or Max**. What was checked: the container header, valid JSON, every patch cord pointing at an existing inlet or outlet, the 8 names and CC numbers, the load gate and change filter in every encoder's path, and the layout fitting the 169 px device height.
+- The load gate (no MIDI sent on load) was checked only by the patch structure, not in Live. If Live ever restores values later than 250 ms after load on a slow machine, increase the `delay 250` value in `generate_device.py`.
 - Recommended: open the device in the Max editor, check it, then **Save** it (or **Freeze** it before sharing) so Max writes the file in its own native format.
