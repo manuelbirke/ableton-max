@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static checks for dist/OB-X8.amxd (no Max/Live required)."""
+"""Static checks for dist/OB-X8 MIDI.amxd (no Max/Live required)."""
 import sys
 from pathlib import Path
 

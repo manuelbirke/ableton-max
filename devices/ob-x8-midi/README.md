@@ -1,4 +1,4 @@
-# OB-X8 – Max for Live MIDI Effect
+# OB-X8 MIDI – Max for Live MIDI Effect
 
 This device has 8 absolute encoders (0–127). Each one has a fixed label, parameter name and MIDI CC number.
 
@@ -18,8 +18,8 @@ Layout: 2 rows of 4 encoders (row 1: Cutoff, Resonance, OSC1, OSC2; row 2: Noise
 The parameter long name and short name both match the label. Push shows these names because they're part of the device file from the start.
 
 ## Files
-- `dist/OB-X8.amxd`: the device. Drop this into Live.
-- `dist/OB-X8.maxpat`: the same patcher as plain Max JSON.
+- `dist/OB-X8 MIDI.amxd`: the device. Drop this into Live.
+- `dist/OB-X8 MIDI.maxpat`: the same patcher as plain Max JSON.
 - `device.py`: the device name and the 8 `(label, CC)` pairs. To change labels or CCs, edit this file and rebuild.
 - `generate_device.py`: builds both files using the shared builder in `lib/cc_encoders.py`.
 - `verify_device.py`: runs static checks on the container, the patch cords, the names and the CC signal path.
@@ -28,17 +28,17 @@ The parameter long name and short name both match the label. Push shows these na
 You need Python 3.8 or newer. Only the standard library is used, and neither Max nor Live has to be installed. From the repository root:
 
 ```sh
-python3 build.py ob-x8
+python3 build.py ob-x8-midi
 ```
 
-This writes `dist/OB-X8.amxd` and `.maxpat`, then runs `verify_device.py`. You can also run the two scripts directly from this folder:
+This writes `dist/OB-X8 MIDI.amxd` and `.maxpat`, then runs `verify_device.py`. You can also run the two scripts directly from this folder:
 
 ```sh
 python3 generate_device.py && python3 verify_device.py
 ```
 
 ## Install
-1. Copy `OB-X8.amxd` to
+1. Copy `OB-X8 MIDI.amxd` to
    `<User Library>/Presets/MIDI Effects/Max MIDI Effect/`
    (by default this is `~/Music/Ableton/User Library/...` on macOS or `Documents\Ableton\User Library\...` on Windows).
 2. In Live, find it in the Browser under *Max for Live → Max MIDI Effect*. Drag it onto a MIDI track. You can also drag the .amxd file straight onto a track.

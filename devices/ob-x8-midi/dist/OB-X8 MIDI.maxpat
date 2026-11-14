@@ -39,7 +39,7 @@
 		"enablehscroll": 1,
 		"enablevscroll": 1,
 		"devicewidth": 344.0,
-		"description": "OB-X8: 8 absolute encoders sending fixed MIDI CCs",
+		"description": "OB-X8 MIDI: 8 absolute encoders sending fixed MIDI CCs",
 		"digest": "",
 		"tags": "",
 		"style": "",

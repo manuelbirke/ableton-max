@@ -8,7 +8,7 @@ Each device is built from a small Python script. The script writes the `.amxd` f
 
 | Device | Type | Description |
 |--------|------|-------------|
-| [OB-X8](devices/ob-x8/) | MIDI Effect | 8 absolute encoders (2 × 4) sending fixed MIDI CCs to the OB-X8. Nothing is sent on load; values go out only when they change. |
+| [OB-X8 MIDI](devices/ob-x8-midi/) | MIDI Effect | 8 absolute encoders (2 × 4) sending fixed MIDI CCs to the OB-X8. Nothing is sent on load; values go out only when they change. |
 | [TEO-5 MIDI](devices/teo5-midi/) | MIDI Effect | 8 absolute encoders (2 × 4) sending fixed MIDI CCs to the TEO-5. Nothing is sent on load; values go out only when they change. |
 
 ## Repository layout
@@ -37,7 +37,7 @@ git clone https://github.com/manuelbirke/ableton-max.git
 cd ableton-max
 
 python3 build.py              # build and verify every device
-python3 build.py ob-x8        # build and verify one device
+python3 build.py ob-x8-midi   # build and verify one device
 python3 build.py --list       # list available devices
 ```
 
@@ -50,9 +50,9 @@ Each built device ends up in `devices/<device-name>/dist/`. `build.py` exits wit
 
 ## Adding a new device
 
-**Another 8-encoder CC device** (same layout and behavior as TEO-5 MIDI / OB-X8):
+**Another 8-encoder CC device** (same layout and behavior as TEO-5 MIDI / OB-X8 MIDI):
 
-1. Copy an existing device folder, e.g. `cp -r devices/ob-x8 devices/<device-name>` (lowercase, dashes), and delete the copied `dist/`.
+1. Copy an existing device folder, e.g. `cp -r devices/ob-x8-midi devices/<device-name>` (lowercase, dashes), and delete the copied `dist/`.
 2. In `device.py`, set `NAME` and the 8 `(label, CC)` pairs in `ENCODERS`.
 3. In `generate_device.py`, `verify_device.py` and `README.md`, replace the old device name.
 4. Add a row to the table above.
