@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Static checks for the generated .amxd (no Max/Live required)."""
+"""Static checks for the generated TEO-5 MIDI .amxd (no Max/Live required)."""
 import json
 import struct
 import sys
 from pathlib import Path
 
-path = Path(__file__).resolve().parent / "dist" / "CC Encoders 8.amxd"
+EXPECTED = [("Cutoff", 33), ("Resonance", 34), ("Filter", 35), ("Reverb", 24),
+            ("Effects", 33), ("Volume", 7), ("Distortion", 67), ("Vintage", 37)]
+
+path = Path(__file__).resolve().parent / "dist" / "TEO-5 MIDI.amxd"
 data = path.read_bytes()
 
 assert data[:4] == b"ampf" and struct.unpack("<I", data[4:8])[0] == 4
@@ -25,48 +28,41 @@ for l in p["lines"]:
     assert so < boxes[s]["numoutlets"], f"bad outlet {s}:{so}"
     assert di < boxes[d]["numinlets"], f"bad inlet {d}:{di}"
 
-params = [b["saved_attribute_attributes"]["valueof"]["parameter_longname"]
-          for b in boxes.values() if b.get("parameter_enable")]
-assert len(params) == len(set(params)) == 25, params
-dials = [b for b in boxes.values() if b["maxclass"] == "live.dial"]
-assert len(dials) == 8
-for d in dials:
-    v = d["saved_attribute_attributes"]["valueof"]
-    assert v["parameter_type"] == 1 and v["parameter_mmin"] == 0 and v["parameter_mmax"] == 127
+# no editable or dynamic parts left
+for b in boxes.values():
+    assert b["maxclass"] in ("newobj", "live.dial", "live.comment"), b["maxclass"]
+    assert not b.get("text", "").startswith(("js", "pattr", "prepend")), b["text"]
 
-# presentation must fit Live's 169 px device height
+params = [b for b in boxes.values() if b.get("parameter_enable")]
+assert len(params) == 8, len(params)
+dials = sorted((b for b in boxes.values() if b["maxclass"] == "live.dial"),
+               key=lambda b: b["presentation_rect"][0])
+assert len(dials) == 8
+
 for b in boxes.values():
     if b.get("presentation"):
         x, y, w, h = b["presentation_rect"]
         assert y + h <= 169 and x + w <= p["devicewidth"], b["id"]
 
 
-# simulate the CC path for each encoder: dial -> t b i -> pack -> iter -> midiout
 def outs(src, outlet):
-    return [(l["patchline"]["destination"]) for l in p["lines"]
+    return [l["patchline"]["destination"] for l in p["lines"]
             if l["patchline"]["source"] == [src, outlet]]
 
 
-for d in dials:
+comments = {b["text"] for b in boxes.values() if b["maxclass"] == "live.comment"}
+for n, (d, (label, cc)) in enumerate(zip(dials, EXPECTED), 1):
+    v = d["saved_attribute_attributes"]["valueof"]
+    assert v["parameter_longname"] == v["parameter_shortname"] == label, v
+    assert v["parameter_type"] == 1 and v["parameter_mmin"] == 0 and v["parameter_mmax"] == 127
+    assert label in comments and f"CC {cc}" in comments
     trig = outs(d["id"], 0)[0][0]
-    order = sorted(outs(trig, 0) + outs(trig, 1))
     pack_id = outs(trig, 1)[0][0]
     assert outs(trig, 1) == [[pack_id, 2]] and outs(trig, 0) == [[pack_id, 0]]
-    status, cc, _ = boxes[pack_id]["text"].split()[1:]
-    assert status == "176"
+    assert boxes[pack_id]["text"] == f"pack 176 {cc} 0", boxes[pack_id]["text"]
     it = outs(pack_id, 0)[0][0]
     assert boxes[outs(it, 0)[0][0]]["text"] == "midiout"
-    print(f"{d['varname']}: sends [0xB0, {cc} (default, set by CC# box), value 0-127]")
-
-    # label pattr -> [prepend label N] -> [js bake_labels.js]; no runtime rename hack
-    n = d["varname"].split()[-1]
-    pattr_id = next(b["id"] for b in boxes.values() if b.get("varname") == f"label{n}")
-    js_id = next(b["id"] for b in boxes.values() if b.get("text") == "js bake_labels.js")
-    fwd = [dst for dst, _ in outs(pattr_id, 0) if boxes[dst]["text"] == f"prepend label {n}"]
-    assert len(fwd) == 1 and outs(fwd[0], 0) == [[js_id, 0]], f"label->js path {n}"
-    assert not any(b.get("text", "").startswith("prepend _parameter") for b in boxes.values())
-    label = next(b for b in boxes.values() if b.get("varname") == f"label_text_{n}")
-    assert d["saved_attribute_attributes"]["valueof"]["parameter_shortname"] == label["text"]
+    print(f"Encoder {n}: label/short name '{label}' -> sends [0xB0, {cc}, 0-127]")
 
 print(f"OK: {len(boxes)} boxes, {len(p['lines'])} lines, {len(data)} bytes")
 sys.exit(0)

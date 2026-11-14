@@ -1,77 +1,64 @@
 #!/usr/bin/env python3
-"""Generate the "CC Encoders 8" Max for Live MIDI Effect (.amxd + .maxpat).
+"""Generate the "TEO-5 MIDI" Max for Live MIDI Effect (.amxd + .maxpat).
 
-Signal flow per encoder N (1..8):
-    [live.dial Encoder N] -> [t b i] -> [pack 176 <cc> <value>] -> [iter] -> [midiout]
-    [live.numbox CC# N]   ----------------^ (middle inlet sets the CC number)
-    [textedit] -> [route text] -> [tosymbol] -> [pattr labelN (blob parameter)]
-    [pattr labelN] -> [prepend set] -> [textedit]   (restores the label on load)
+8 absolute encoders with fixed labels, parameter names and CC numbers.
+
+Signal flow per encoder:
+    [live.dial <Label>] -> [t b i] -> [pack 176 <cc> 0] -> [iter] -> [midiout]
 
 Status byte 176 (0xB0) = Control Change on channel 1. In a MIDI Effect, Live
 routes the device output through the track, so the track's MIDI To routing /
-channel determines where the message ends up. Incoming MIDI is passed through
+channel determines where the message ends up. Incoming MIDI passes through
 via [midiin] -> [midiout].
 """
-import argparse
 import json
-import re
 import struct
 from pathlib import Path
 
-NUM_ENCODERS = 8
-DEFAULT_CC_START = 20          # CC 20..27 are "undefined" in the MIDI spec
+DEVICE_NAME = "TEO-5 MIDI"
+
+# (label = parameter long name = parameter short name, MIDI CC number)
+ENCODERS = [
+    ("Cutoff", 33),
+    ("Resonance", 34),
+    ("Filter", 35),
+    ("Reverb", 24),
+    ("Effects", 33),
+    ("Volume", 7),
+    ("Distortion", 67),
+    ("Vintage", 37),
+]
+
 COL_W = 68                      # presentation column width (px)
-DEVICE_W = 8 + NUM_ENCODERS * COL_W
+DEVICE_W = 8 + len(ENCODERS) * COL_W
 OUT_DIR = Path(__file__).resolve().parent / "dist"
-DEVICE_NAME = "CC Encoders 8"
 
 FG = [0.88, 0.88, 0.88, 1.0]
-FIELD_BG = [0.17, 0.17, 0.17, 1.0]
+DIM = [0.6, 0.6, 0.6, 1.0]
 ACCENT = [1.0, 0.71, 0.196, 1.0]
-
-
-def parse_args():
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--labels", default="",
-                    help="Comma-separated encoder labels baked in as the dial short names "
-                         "(what Push shows), e.g. 'Cutoff,Reso,Drive'. Missing -> 'Enc N'.")
-    ap.add_argument("--name", default=None,
-                    help="Device/file name (default: 'CC Encoders 8', or "
-                         "'CC Encoders 8 - <labels>' when --labels is used)")
-    return ap.parse_args()
-
-
-ARGS = parse_args()
-_given = [s.strip() for s in ARGS.labels.split(",")] if ARGS.labels else []
-if len(_given) > NUM_ENCODERS:
-    raise SystemExit(f"--labels: at most {NUM_ENCODERS} labels, got {len(_given)}")
-LABELS = [(_given[i] if i < len(_given) and _given[i] else f"Enc {i + 1}")
-          for i in range(NUM_ENCODERS)]
-if ARGS.name:
-    DEVICE_NAME = ARGS.name
-elif _given:
-    DEVICE_NAME = f"{DEVICE_NAME} - " + re.sub(r"[^\w\- ]", "", "_".join(LABELS))[:60]
 
 boxes, lines = [], []
 _next_id = [0]
 
 
-def new_id():
-    _next_id[0] += 1
-    return f"obj-{_next_id[0]}"
-
-
 def add_box(**box):
-    box.setdefault("id", new_id())
+    _next_id[0] += 1
+    box.setdefault("id", f"obj-{_next_id[0]}")
     boxes.append({"box": box})
     return box["id"]
 
 
-def newobj(text, rect, ninlets, noutlets, outlettype=None, **extra):
+def newobj(text, rect, ninlets, noutlets, outlettype=None):
     return add_box(maxclass="newobj", text=text, patching_rect=rect,
                    numinlets=ninlets, numoutlets=noutlets,
-                   outlettype=outlettype if outlettype is not None else [""] * noutlets,
-                   **extra)
+                   outlettype=outlettype if outlettype is not None else [""] * noutlets)
+
+
+def comment(text, rect, prect, color, size, face=0):
+    return add_box(maxclass="live.comment", text=text, patching_rect=rect,
+                   presentation=1, presentation_rect=prect,
+                   numinlets=1, numoutlets=0, outlettype=[],
+                   fontsize=size, fontface=face, textjustification=1, textcolor=color)
 
 
 def connect(src, src_out, dst, dst_in):
@@ -80,155 +67,49 @@ def connect(src, src_out, dst, dst_in):
 
 # ---------------------------------------------------------------- MIDI thru
 midiin = newobj("midiin", [20, 20, 45, 22], 1, 1, ["int"])
-midiout = newobj("midiout", [20, 520, 55, 22], 1, 0, [])
+midiout = newobj("midiout", [20, 400, 55, 22], 1, 0, [])
 connect(midiin, 0, midiout, 0)
 
-# ---------------------------------------------------------------- save named copy
-bake_btn = add_box(
-    maxclass="live.text", varname="save_named_copy", text="Save copy with these names",
-    patching_rect=[20, 560, 150, 20], presentation=1,
-    presentation_rect=[8, 112, 150, 18],
-    numinlets=1, numoutlets=2, outlettype=["", ""], mode=0,
-    parameter_enable=1,
-    saved_attribute_attributes={"valueof": {
-        "parameter_longname": "Save Named Copy",
-        "parameter_shortname": "Save Copy",
-        "parameter_type": 2, "parameter_enum": ["val1", "val2"],
-        "parameter_mmax": 1, "parameter_invisible": 2,   # hidden, not stored
-    }},
-    hint="Writes a copy of this device with the labels as encoder names (shown on Push)",
-)
-btn_sel = newobj("sel 1", [20, 590, 40, 22], 2, 2, ["bang", ""])
-save_dlg = newobj("savedialog", [20, 620, 70, 22], 1, 3, ["", "", "bang"])
-bake_msg = newobj("prepend bake", [20, 650, 80, 22], 1, 1)
-bake_js = newobj("js bake_labels.js", [20, 680, 100, 22], 1, 1)
-status_set = newobj("prepend set", [20, 710, 72, 22], 1, 1)
-status_txt = add_box(
-    maxclass="comment", text="Live reads names on load: save a copy, then load it",
-    patching_rect=[20, 740, 300, 18], presentation=1,
-    presentation_rect=[164, 113, DEVICE_W - 172, 18],
-    numinlets=1, numoutlets=0, outlettype=[], fontsize=9.0, textcolor=FG,
-)
-connect(bake_btn, 0, btn_sel, 0)
-connect(btn_sel, 0, save_dlg, 0)
-connect(save_dlg, 0, bake_msg, 0)
-connect(bake_msg, 0, bake_js, 0)
-connect(bake_js, 0, status_set, 0)
-connect(status_set, 0, status_txt, 0)
-
 # ---------------------------------------------------------------- encoders
-for i in range(NUM_ENCODERS):
-    n = i + 1
-    px = 100 + i * 160             # patching x
+for i, (label, cc) in enumerate(ENCODERS):
+    px = 100 + i * 140             # patching x
     vx = 8 + i * COL_W              # presentation x
-    default_cc = DEFAULT_CC_START + i
-    lbl = LABELS[i]
 
-    # -- label (editable, persisted through a blob pattr parameter)
-    label = add_box(
-        maxclass="textedit", varname=f"label_text_{n}",
-        patching_rect=[px, 60, 64, 20], presentation=1,
-        presentation_rect=[vx, 6, COL_W - 8, 18],
-        numinlets=1, numoutlets=4, outlettype=["", "int", "", ""],
-        text=lbl, keymode=1, lines=1, wordwrap=0, tabmode=0,
-        fontsize=10.0, fontface=1, textjustification=1,
-        bgcolor=FIELD_BG, textcolor=FG, bordercolor=[0.3, 0.3, 0.3, 1.0],
-        border=1.0, rounded=3.0,
-        hint=f"Click, type a label for encoder {n}, press Enter",
-    )
-    route_text = newobj("route text", [px, 90, 60, 22], 2, 2)
-    to_sym = newobj("tosymbol", [px, 118, 58, 22], 1, 1)
-    pattr = newobj(
-        f"pattr label{n}", [px, 146, 80, 22], 1, 3, ["", "", ""],
-        varname=f"label{n}", parameter_enable=1,
-        restore=[lbl],
-        saved_attribute_attributes={"valueof": {
-            "parameter_longname": f"Label {n}",
-            "parameter_shortname": f"Label {n}",
-            "parameter_type": 3,          # blob: stored with the Live set
-            "parameter_invisible": 1,     # stored only, not automatable
-        }},
-    )
-    prepend_set = newobj("prepend set", [px + 70, 90, 72, 22], 1, 1)
-    connect(label, 0, route_text, 0)
-    connect(route_text, 0, to_sym, 0)
-    connect(to_sym, 0, pattr, 0)
-    connect(pattr, 0, prepend_set, 0)
-    connect(prepend_set, 0, label, 0)
+    comment(label, [px, 60, 64, 18], [vx - 2, 10, COL_W - 4, 18], FG, 10.0, 1)
 
-    # -- encoder dial (absolute 0..127, integer, automatable)
     dial = add_box(
-        maxclass="live.dial", varname=f"Encoder {n}",
-        patching_rect=[px, 200, 44, 48], presentation=1,
-        presentation_rect=[vx + (COL_W - 8 - 44) / 2, 28, 44, 48],
+        maxclass="live.dial", varname=label,
+        patching_rect=[px, 90, 44, 48], presentation=1,
+        presentation_rect=[vx + (COL_W - 8 - 44) / 2, 34, 44, 48],
         numinlets=1, numoutlets=2, outlettype=["", "float"],
         parameter_enable=1, showname=0, shownumber=1,
         activedialcolor=ACCENT,
         saved_attribute_attributes={"valueof": {
-            "parameter_longname": f"Encoder {n}",
-            "parameter_shortname": lbl,   # shown on Push / in Live's compact views
-            "parameter_type": 1,          # int
+            "parameter_longname": label,
+            "parameter_shortname": label,  # shown on Push
+            "parameter_type": 1,           # int
             "parameter_mmin": 0.0,
             "parameter_mmax": 127.0,
             "parameter_initial_enable": 1,
             "parameter_initial": [0],
-            "parameter_unitstyle": 0,     # Int
+            "parameter_unitstyle": 0,      # Int
         }},
     )
 
-    # -- report label to the "save named copy" script (Live ignores parameter
-    #    renames on a running device, so names are baked into a saved copy)
-    to_js_label = newobj(f"prepend label {n}", [px, 174, 90, 22], 1, 1)
-    connect(pattr, 0, to_js_label, 0)
-    connect(to_js_label, 0, bake_js, 0)
+    comment(f"CC {cc}", [px, 150, 50, 18], [vx - 2, 92, COL_W - 4, 18], DIM, 9.0)
 
-    # -- CC number selector
-    cc_label = add_box(
-        maxclass="live.comment", text="CC#",
-        patching_rect=[px + 60, 260, 30, 18], presentation=1,
-        presentation_rect=[vx, 84, 26, 18],
-        numinlets=1, numoutlets=0, outlettype=[], fontsize=9.0,
-        textjustification=0,
-    )
-    cc_box = add_box(
-        maxclass="live.numbox", varname=f"CC# {n}",
-        patching_rect=[px + 60, 280, 40, 15], presentation=1,
-        presentation_rect=[vx + 26, 85, COL_W - 8 - 26, 15],
-        numinlets=1, numoutlets=2, outlettype=["", "float"],
-        parameter_enable=1,
-        saved_attribute_attributes={"valueof": {
-            "parameter_longname": f"CC# {n}",
-            "parameter_shortname": f"CC{n}",
-            "parameter_type": 1,
-            "parameter_mmin": 0.0,
-            "parameter_mmax": 127.0,
-            "parameter_initial_enable": 1,
-            "parameter_initial": [default_cc],
-            "parameter_unitstyle": 0,
-            "parameter_invisible": 1,     # stored, not shown as automation lane
-        }},
-    )
-
-    # -- CC message assembly: 176 (0xB0) <cc> <value>
-    trig = newobj("t b i", [px, 320, 40, 22], 1, 2, ["bang", "int"])
-    pack = newobj(f"pack 176 {default_cc} 0", [px, 380, 90, 22], 3, 1)
-    it = newobj("iter", [px, 420, 34, 22], 1, 1, ["int"])
+    # CC message: 176 (0xB0) <cc> <value>
+    trig = newobj("t b i", [px, 200, 40, 22], 1, 2, ["bang", "int"])
+    pack = newobj(f"pack 176 {cc} 0", [px, 240, 90, 22], 3, 1)
+    it = newobj("iter", [px, 280, 34, 22], 1, 1, ["int"])
     connect(dial, 0, trig, 0)
     connect(trig, 1, pack, 2)        # value first (right-to-left order)
     connect(trig, 0, pack, 0)        # then bang -> output list
-    connect(cc_box, 0, pack, 1)      # CC number (cold inlet, no output)
-    to_js_cc = newobj(f"prepend cc {n}", [px + 60, 350, 80, 22], 1, 1)
-    connect(cc_box, 0, to_js_cc, 0)
-    connect(to_js_cc, 0, bake_js, 0)
     connect(pack, 0, it, 0)
     connect(it, 0, midiout, 0)
 
-# footer note in the device UI
-add_box(maxclass="live.comment",
-        text="Label: click + Enter.  Output: CC on the track's MIDI routing/channel",
-        patching_rect=[20, 600, 380, 18], presentation=1,
-        presentation_rect=[8, 140, DEVICE_W - 16, 18],
-        numinlets=1, numoutlets=0, outlettype=[], fontsize=9.0)
+comment("TEO-5 MIDI  -  CC out on the track's MIDI routing/channel",
+        [20, 460, 380, 18], [8, 140, DEVICE_W - 16, 18], DIM, 9.0)
 
 patcher = {
     "patcher": {
@@ -236,7 +117,7 @@ patcher = {
         "appversion": {"major": 8, "minor": 5, "revision": 5,
                        "architecture": "x64", "modernui": 1},
         "classnamespace": "box",
-        "rect": [100.0, 100.0, 1450.0, 680.0],
+        "rect": [100.0, 100.0, 1300.0, 520.0],
         "openrect": [0.0, 0.0, float(DEVICE_W), 169.0],
         "bglocked": 0,
         "openinpresentation": 1,
@@ -253,7 +134,7 @@ patcher = {
         "enablehscroll": 1,
         "enablevscroll": 1,
         "devicewidth": float(DEVICE_W),
-        "description": "8 absolute encoders sending MIDI CC with editable labels and per-encoder CC numbers",
+        "description": "TEO-5 MIDI: 8 absolute encoders sending fixed MIDI CCs",
         "digest": "",
         "tags": "",
         "style": "",
@@ -293,9 +174,6 @@ def main():
     text = json.dumps(patcher, indent="\t")
     (OUT_DIR / f"{DEVICE_NAME}.maxpat").write_text(text, encoding="utf-8")
     (OUT_DIR / f"{DEVICE_NAME}.amxd").write_bytes(build_amxd(text.encode("utf-8")))
-    # the "Save copy with these names" button needs this script next to the device
-    js = Path(__file__).resolve().parent / "bake_labels.js"
-    (OUT_DIR / js.name).write_bytes(js.read_bytes())
     print(f"wrote {len(boxes)} boxes, {len(lines)} lines -> {OUT_DIR}")
 
 
