@@ -53,6 +53,10 @@ Each built device ends up in `devices/<device-name>/dist/`. `build.py` exits wit
 4. Add a `README.md` for the device and a row to the table above.
 5. Run `python3 build.py <device-name>` and commit the source and `dist/` together.
 
+## License
+
+[Apache License 2.0](LICENSE)
+
 ## Note on verification
 
 The build scripts check device files statically: the container format, the patch cords and the device-specific logic. They don't run Max or Live. Open a new device in Live (or the Max editor) at least once before relying on it.
