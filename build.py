@@ -4,16 +4,24 @@
 Every folder in devices/ that contains a generate_device.py is a device.
 If it also has a verify_device.py, that runs right after the build.
 
+When all devices are built and every build succeeds, the .amxd files are
+collected into the top-level dist/ folder (old .amxd files there are removed
+first, so renamed or deleted devices don't linger). Building selected devices
+leaves dist/ untouched.
+
 Usage:
     python3 build.py              # build + verify all devices
     python3 build.py teo5-midi    # build + verify selected devices
     python3 build.py --list       # list available devices
 """
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-DEVICES_DIR = Path(__file__).resolve().parent / "devices"
+ROOT = Path(__file__).resolve().parent
+DEVICES_DIR = ROOT / "devices"
+COMMON_DIST = ROOT / "dist"
 
 
 def find_devices():
@@ -24,6 +32,23 @@ def find_devices():
 def run(script: Path) -> bool:
     print(f"$ python3 {script.relative_to(DEVICES_DIR.parent)}")
     return subprocess.run([sys.executable, str(script)], cwd=script.parent).returncode == 0
+
+
+def collect(devices):
+    """Copy every device's dist/*.amxd into the common dist/ folder."""
+    COMMON_DIST.mkdir(exist_ok=True)
+    for old in COMMON_DIST.glob("*.amxd"):
+        old.unlink()
+    copied = []
+    for d in devices:
+        for amxd in sorted((d / "dist").glob("*.amxd")):
+            target = COMMON_DIST / amxd.name
+            if target.exists():
+                raise SystemExit(f"duplicate device file name: {amxd.name}")
+            shutil.copy2(amxd, target)
+            copied.append(amxd.name)
+    print(f"\ncollected {len(copied)} device(s) in {COMMON_DIST.relative_to(ROOT)}/: "
+          f"{', '.join(copied)}")
 
 
 def main(argv):
@@ -54,7 +79,11 @@ def main(argv):
     print(f"\n{len(devices) - len(failed)}/{len(devices)} device(s) built OK")
     if failed:
         print(f"FAILED: {', '.join(failed)}", file=sys.stderr)
+        if not argv:
+            print("dist/ not updated because of failed builds", file=sys.stderr)
         return 1
+    if not argv:
+        collect(devices)
     return 0
 
 
