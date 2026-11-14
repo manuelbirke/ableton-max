@@ -20,7 +20,8 @@ The parameter long name and short name both match the label. Push shows these na
 ## Files
 - `dist/TEO-5 MIDI.amxd`: the device. Drop this into Live.
 - `dist/TEO-5 MIDI.maxpat`: the same patcher as plain Max JSON.
-- `generate_device.py`: builds both files. To change labels or CCs, edit the `ENCODERS` list at the top.
+- `device.py`: the device name and the 8 `(label, CC)` pairs. To change labels or CCs, edit this file and rebuild.
+- `generate_device.py`: builds both files using the shared builder in `lib/cc_encoders.py`.
 - `verify_device.py`: runs static checks on the container, the patch cords, the names and the CC signal path.
 
 ## Build
@@ -51,5 +52,5 @@ python3 generate_device.py && python3 verify_device.py
 
 ## Not verified (no Ableton Live or Max here)
 - The device has **not been opened in Live or Max**. What was checked: the container header, valid JSON, every patch cord pointing at an existing inlet or outlet, the 8 names and CC numbers, the load gate and change filter in every encoder's path, and the layout fitting the 169 px device height.
-- The load gate (no MIDI sent on load) was checked only by the patch structure, not in Live. If Live ever restores values later than 250 ms after load on a slow machine, increase the `delay 250` value in `generate_device.py`.
+- The load gate (no MIDI sent on load) was checked only by the patch structure, not in Live. If Live ever restores values later than 250 ms after load on a slow machine, increase `LOAD_DELAY_MS` in `lib/cc_encoders.py` (this affects all encoder devices).
 - Recommended: open the device in the Max editor, check it, then **Save** it (or **Freeze** it before sharing) so Max writes the file in its own native format.
