@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build dist/OB-X8.amxd + .maxpat. Edit device.py to change labels/CCs."""
+"""Build dist/OB-X8 MIDI.amxd + .maxpat. Edit device.py to change labels/CCs."""
 import sys
 from pathlib import Path
 

@@ -1,5 +1,5 @@
-"""OB-X8 device definition: name + 8 encoders (label = short name, MIDI CC)."""
-NAME = "OB-X8"
+"""OB-X8 MIDI device definition: name + 8 encoders (label = short name, MIDI CC)."""
+NAME = "OB-X8 MIDI"
 
 ENCODERS = [
     ("Cutoff", 33),
