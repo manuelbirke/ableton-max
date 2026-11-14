@@ -4,12 +4,14 @@ This device has 8 absolute encoders. Each one has a label you can edit, its own 
 
 ## Files
 - `dist/CC Encoders 8.amxd`: the device. Drop this into Live.
+- `dist/bake_labels.js`: script used by the **Save copy with these names** button. Keep it in the same folder as the .amxd.
 - `dist/CC Encoders 8.maxpat`: the same patcher as plain Max JSON.
+- `test_bake.js`: Node test for the save-copy script (`node test_bake.js`).
 - `generate_device.py`: rebuilds both files (`python3 generate_device.py`).
 - `verify_device.py`: runs static checks on the container, the patch cords, the parameters and the CC signal path.
 
 ## Install
-1. Copy `CC Encoders 8.amxd` to
+1. Copy `CC Encoders 8.amxd` **and** `bake_labels.js` to
    `<User Library>/Presets/MIDI Effects/Max MIDI Effect/`
    (by default this is `~/Music/Ableton/User Library/...` on macOS or `Documents\Ableton\User Library\...` on Windows).
 2. In Live, find it in the Browser under *Max for Live → Max MIDI Effect*. Drag it onto a MIDI track. You can also drag the .amxd file straight onto a track.
@@ -24,18 +26,26 @@ This device has 8 absolute encoders. Each one has a label you can edit, its own 
 
 ## Encoder names on Push
 
-Push shows each dial's **short name**. There are two ways to set it:
+Push shows each dial's **short name**. Live reads parameter names **only when a device loads**, so renaming a dial on a running device doesn't reach Push. Earlier versions tried this with `_parameter_shortname`; it didn't work, so it's been removed. Instead, the names are written into a new copy of the device:
 
-1. **Live rename (built in, best effort):** when you edit a label, the device sends `_parameter_shortname <label>` to that dial (and sends it again when the Set loads). This always updates the name inside Max. Whether Live and Push pick it up while the device is running is **not guaranteed**: Live reads parameter names when the device loads, and Cycling '74 doesn't support `_parameter_shortname`. If Push doesn't update, try selecting another track and coming back, or reloading the Set.
-2. **Baked-in names (reliable):** generate a copy of the device with your labels set as the short names when it's built:
+1. **In the device (no tools needed):**
+   1. Type your labels and set the CC numbers.
+   2. Click **Save copy with these names** and choose a new file name. Save it in `User Library/Presets/MIDI Effects/Max MIDI Effect/` so it shows up in Live's browser.
+   3. Load the new copy onto the track and delete the old one. Push now shows your labels, and the CC numbers are kept.
+   4. The status text next to the button shows the result or an error. Errors are also printed to the Max console.
+
+   Requirements: `bake_labels.js` must be in the same folder as the device, and the device must **not be frozen**.
+2. **From the command line:** build a copy with the names set:
    ```
    python3 generate_device.py --labels "Cutoff,Reso,Drive,Attack,Decay,Sustain,Release,Mix"
    ```
-   This writes `dist/CC Encoders 8 - <labels>.amxd`. Use `--name "My Synth CCs"` to choose the file name. Leave a slot empty to keep `Enc N`. Push shows these names because they're present when the device loads.
+   This writes `dist/CC Encoders 8 - <labels>.amxd`. Use `--name "My Synth CCs"` to choose the file name. Leave a slot empty to keep `Enc N`.
 
    You can also do this without the script: open the device in the Max editor, set each dial's *Short Name* in the Inspector, and save.
 
-The parameter long names stay `Encoder 1–8`, so existing automation and MIDI mappings keep working.
+The parameter long names stay `Encoder 1–8` in every copy. Automation and MIDI mappings belong to the device instance, though, so redo them on the new copy. Set your names before you automate.
+
+**Not verified in Live:** the button relies on Max's `savedialog` and the JS `File` object, plus `this.patcher.filepath` returning the device's .amxd path. The script logic was tested in Node against the real generated device; it hasn't run inside Max/Live.
 
 Another option: put the device in a MIDI Effect Rack, map the dials to Macros, and rename the Macros. Push shows Macro names.
 

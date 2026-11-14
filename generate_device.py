@@ -83,6 +83,39 @@ midiin = newobj("midiin", [20, 20, 45, 22], 1, 1, ["int"])
 midiout = newobj("midiout", [20, 520, 55, 22], 1, 0, [])
 connect(midiin, 0, midiout, 0)
 
+# ---------------------------------------------------------------- save named copy
+bake_btn = add_box(
+    maxclass="live.text", varname="save_named_copy", text="Save copy with these names",
+    patching_rect=[20, 560, 150, 20], presentation=1,
+    presentation_rect=[8, 112, 150, 18],
+    numinlets=1, numoutlets=2, outlettype=["", ""], mode=0,
+    parameter_enable=1,
+    saved_attribute_attributes={"valueof": {
+        "parameter_longname": "Save Named Copy",
+        "parameter_shortname": "Save Copy",
+        "parameter_type": 2, "parameter_enum": ["val1", "val2"],
+        "parameter_mmax": 1, "parameter_invisible": 2,   # hidden, not stored
+    }},
+    hint="Writes a copy of this device with the labels as encoder names (shown on Push)",
+)
+btn_sel = newobj("sel 1", [20, 590, 40, 22], 2, 2, ["bang", ""])
+save_dlg = newobj("savedialog", [20, 620, 70, 22], 1, 3, ["", "", "bang"])
+bake_msg = newobj("prepend bake", [20, 650, 80, 22], 1, 1)
+bake_js = newobj("js bake_labels.js", [20, 680, 100, 22], 1, 1)
+status_set = newobj("prepend set", [20, 710, 72, 22], 1, 1)
+status_txt = add_box(
+    maxclass="comment", text="Live reads names on load: save a copy, then load it",
+    patching_rect=[20, 740, 300, 18], presentation=1,
+    presentation_rect=[164, 113, DEVICE_W - 172, 18],
+    numinlets=1, numoutlets=0, outlettype=[], fontsize=9.0, textcolor=FG,
+)
+connect(bake_btn, 0, btn_sel, 0)
+connect(btn_sel, 0, save_dlg, 0)
+connect(save_dlg, 0, bake_msg, 0)
+connect(bake_msg, 0, bake_js, 0)
+connect(bake_js, 0, status_set, 0)
+connect(status_set, 0, status_txt, 0)
+
 # ---------------------------------------------------------------- encoders
 for i in range(NUM_ENCODERS):
     n = i + 1
@@ -143,11 +176,11 @@ for i in range(NUM_ENCODERS):
         }},
     )
 
-    # -- runtime rename: label -> dial short name (parameter long name stays
-    #    "Encoder N" so automation and MIDI mappings keep their identity)
-    shortname = newobj("prepend _parameter_shortname", [px, 174, 150, 22], 1, 1)
-    connect(pattr, 0, shortname, 0)
-    connect(shortname, 0, dial, 0)
+    # -- report label to the "save named copy" script (Live ignores parameter
+    #    renames on a running device, so names are baked into a saved copy)
+    to_js_label = newobj(f"prepend label {n}", [px, 174, 90, 22], 1, 1)
+    connect(pattr, 0, to_js_label, 0)
+    connect(to_js_label, 0, bake_js, 0)
 
     # -- CC number selector
     cc_label = add_box(
@@ -184,6 +217,9 @@ for i in range(NUM_ENCODERS):
     connect(trig, 1, pack, 2)        # value first (right-to-left order)
     connect(trig, 0, pack, 0)        # then bang -> output list
     connect(cc_box, 0, pack, 1)      # CC number (cold inlet, no output)
+    to_js_cc = newobj(f"prepend cc {n}", [px + 60, 350, 80, 22], 1, 1)
+    connect(cc_box, 0, to_js_cc, 0)
+    connect(to_js_cc, 0, bake_js, 0)
     connect(pack, 0, it, 0)
     connect(it, 0, midiout, 0)
 
@@ -257,6 +293,9 @@ def main():
     text = json.dumps(patcher, indent="\t")
     (OUT_DIR / f"{DEVICE_NAME}.maxpat").write_text(text, encoding="utf-8")
     (OUT_DIR / f"{DEVICE_NAME}.amxd").write_bytes(build_amxd(text.encode("utf-8")))
+    # the "Save copy with these names" button needs this script next to the device
+    js = Path(__file__).resolve().parent / "bake_labels.js"
+    (OUT_DIR / js.name).write_bytes(js.read_bytes())
     print(f"wrote {len(boxes)} boxes, {len(lines)} lines -> {OUT_DIR}")
 
 

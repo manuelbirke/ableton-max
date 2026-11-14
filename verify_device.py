@@ -27,7 +27,7 @@ for l in p["lines"]:
 
 params = [b["saved_attribute_attributes"]["valueof"]["parameter_longname"]
           for b in boxes.values() if b.get("parameter_enable")]
-assert len(params) == len(set(params)) == 24, params
+assert len(params) == len(set(params)) == 25, params
 dials = [b for b in boxes.values() if b["maxclass"] == "live.dial"]
 assert len(dials) == 8
 for d in dials:
@@ -58,12 +58,13 @@ for d in dials:
     assert boxes[outs(it, 0)[0][0]]["text"] == "midiout"
     print(f"{d['varname']}: sends [0xB0, {cc} (default, set by CC# box), value 0-127]")
 
-    # label pattr -> [prepend _parameter_shortname] -> this dial (runtime rename)
+    # label pattr -> [prepend label N] -> [js bake_labels.js]; no runtime rename hack
     n = d["varname"].split()[-1]
     pattr_id = next(b["id"] for b in boxes.values() if b.get("varname") == f"label{n}")
-    renamers = [dst for dst, _ in outs(pattr_id, 0)
-                if boxes[dst]["text"] == "prepend _parameter_shortname"]
-    assert len(renamers) == 1 and outs(renamers[0], 0) == [[d["id"], 0]], f"rename path {n}"
+    js_id = next(b["id"] for b in boxes.values() if b.get("text") == "js bake_labels.js")
+    fwd = [dst for dst, _ in outs(pattr_id, 0) if boxes[dst]["text"] == f"prepend label {n}"]
+    assert len(fwd) == 1 and outs(fwd[0], 0) == [[js_id, 0]], f"label->js path {n}"
+    assert not any(b.get("text", "").startswith("prepend _parameter") for b in boxes.values())
     label = next(b for b in boxes.values() if b.get("varname") == f"label_text_{n}")
     assert d["saved_attribute_attributes"]["valueof"]["parameter_shortname"] == label["text"]
 
