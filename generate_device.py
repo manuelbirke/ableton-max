@@ -12,7 +12,9 @@ routes the device output through the track, so the track's MIDI To routing /
 channel determines where the message ends up. Incoming MIDI is passed through
 via [midiin] -> [midiout].
 """
+import argparse
 import json
+import re
 import struct
 from pathlib import Path
 
@@ -26,6 +28,29 @@ DEVICE_NAME = "CC Encoders 8"
 FG = [0.88, 0.88, 0.88, 1.0]
 FIELD_BG = [0.17, 0.17, 0.17, 1.0]
 ACCENT = [1.0, 0.71, 0.196, 1.0]
+
+
+def parse_args():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--labels", default="",
+                    help="Comma-separated encoder labels baked in as the dial short names "
+                         "(what Push shows), e.g. 'Cutoff,Reso,Drive'. Missing -> 'Enc N'.")
+    ap.add_argument("--name", default=None,
+                    help="Device/file name (default: 'CC Encoders 8', or "
+                         "'CC Encoders 8 - <labels>' when --labels is used)")
+    return ap.parse_args()
+
+
+ARGS = parse_args()
+_given = [s.strip() for s in ARGS.labels.split(",")] if ARGS.labels else []
+if len(_given) > NUM_ENCODERS:
+    raise SystemExit(f"--labels: at most {NUM_ENCODERS} labels, got {len(_given)}")
+LABELS = [(_given[i] if i < len(_given) and _given[i] else f"Enc {i + 1}")
+          for i in range(NUM_ENCODERS)]
+if ARGS.name:
+    DEVICE_NAME = ARGS.name
+elif _given:
+    DEVICE_NAME = f"{DEVICE_NAME} - " + re.sub(r"[^\w\- ]", "", "_".join(LABELS))[:60]
 
 boxes, lines = [], []
 _next_id = [0]
@@ -64,6 +89,7 @@ for i in range(NUM_ENCODERS):
     px = 100 + i * 160             # patching x
     vx = 8 + i * COL_W              # presentation x
     default_cc = DEFAULT_CC_START + i
+    lbl = LABELS[i]
 
     # -- label (editable, persisted through a blob pattr parameter)
     label = add_box(
@@ -71,7 +97,7 @@ for i in range(NUM_ENCODERS):
         patching_rect=[px, 60, 64, 20], presentation=1,
         presentation_rect=[vx, 6, COL_W - 8, 18],
         numinlets=1, numoutlets=4, outlettype=["", "int", "", ""],
-        text=f"Enc {n}", keymode=1, lines=1, wordwrap=0, tabmode=0,
+        text=lbl, keymode=1, lines=1, wordwrap=0, tabmode=0,
         fontsize=10.0, fontface=1, textjustification=1,
         bgcolor=FIELD_BG, textcolor=FG, bordercolor=[0.3, 0.3, 0.3, 1.0],
         border=1.0, rounded=3.0,
@@ -82,7 +108,7 @@ for i in range(NUM_ENCODERS):
     pattr = newobj(
         f"pattr label{n}", [px, 146, 80, 22], 1, 3, ["", "", ""],
         varname=f"label{n}", parameter_enable=1,
-        restore=[f"Enc {n}"],
+        restore=[lbl],
         saved_attribute_attributes={"valueof": {
             "parameter_longname": f"Label {n}",
             "parameter_shortname": f"Label {n}",
@@ -107,7 +133,7 @@ for i in range(NUM_ENCODERS):
         activedialcolor=ACCENT,
         saved_attribute_attributes={"valueof": {
             "parameter_longname": f"Encoder {n}",
-            "parameter_shortname": f"Enc {n}",
+            "parameter_shortname": lbl,   # shown on Push / in Live's compact views
             "parameter_type": 1,          # int
             "parameter_mmin": 0.0,
             "parameter_mmax": 127.0,
@@ -116,6 +142,12 @@ for i in range(NUM_ENCODERS):
             "parameter_unitstyle": 0,     # Int
         }},
     )
+
+    # -- runtime rename: label -> dial short name (parameter long name stays
+    #    "Encoder N" so automation and MIDI mappings keep their identity)
+    shortname = newobj("prepend _parameter_shortname", [px, 174, 150, 22], 1, 1)
+    connect(pattr, 0, shortname, 0)
+    connect(shortname, 0, dial, 0)
 
     # -- CC number selector
     cc_label = add_box(

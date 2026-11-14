@@ -22,6 +22,23 @@ This device has 8 absolute encoders. Each one has a label you can edit, its own 
 - **MIDI channel:** there is no channel control. The device builds raw bytes with status `0xB0` and sends them through `midiout`. Live passes the output through the track, so the track's MIDI routing decides where it goes. Incoming MIDI passes through unchanged.
 - **Saving:** the dials ("Encoder 1–8") can be automated and are saved with the Live Set. The CC numbers ("CC# 1–8") are saved but are not automatable. The labels are stored in hidden blob parameters (`pattr` in parameter mode, "Label 1–8"), so they are saved with the Set too.
 
+## Encoder names on Push
+
+Push shows each dial's **short name**. There are two ways to set it:
+
+1. **Live rename (built in, best effort):** when you edit a label, the device sends `_parameter_shortname <label>` to that dial (and sends it again when the Set loads). This always updates the name inside Max. Whether Live and Push pick it up while the device is running is **not guaranteed**: Live reads parameter names when the device loads, and Cycling '74 doesn't support `_parameter_shortname`. If Push doesn't update, try selecting another track and coming back, or reloading the Set.
+2. **Baked-in names (reliable):** generate a copy of the device with your labels set as the short names when it's built:
+   ```
+   python3 generate_device.py --labels "Cutoff,Reso,Drive,Attack,Decay,Sustain,Release,Mix"
+   ```
+   This writes `dist/CC Encoders 8 - <labels>.amxd`. Use `--name "My Synth CCs"` to choose the file name. Leave a slot empty to keep `Enc N`. Push shows these names because they're present when the device loads.
+
+   You can also do this without the script: open the device in the Max editor, set each dial's *Short Name* in the Inspector, and save.
+
+The parameter long names stay `Encoder 1–8`, so existing automation and MIDI mappings keep working.
+
+Another option: put the device in a MIDI Effect Rack, map the dials to Macros, and rename the Macros. Push shows Macro names.
+
 ## Not verified (no Ableton Live or Max here)
 - The device has **not been opened in Live or Max**. What was checked: the container header (`ampf`/`mmmm`/`meta`/`ptch`), valid JSON, every patch cord pointing at an existing inlet or outlet, 24 unique parameter names, and the layout fitting the 169 px device height.
 - Two behaviours are unconfirmed and should be tested first: label persistence through the blob `pattr`, and whether Live rewrites the `0xB0` channel to the track's output channel. If Live sends on channel 1 regardless of routing, set the channel on the receiving instrument or device.
