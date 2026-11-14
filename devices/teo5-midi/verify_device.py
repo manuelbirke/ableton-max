@@ -1,26 +1,17 @@
 #!/usr/bin/env python3
 """Static checks for the generated TEO-5 MIDI .amxd (no Max/Live required)."""
-import json
-import struct
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root
+from lib.amxd import read_amxd  # noqa: E402
 
 EXPECTED = [("Cutoff", 33), ("Resonance", 34), ("Filter", 35), ("Reverb", 24),
             ("Effects", 19), ("Volume", 7), ("Distortion", 67), ("Vintage", 37)]
 
 path = Path(__file__).resolve().parent / "dist" / "TEO-5 MIDI.amxd"
-data = path.read_bytes()
-
-assert data[:4] == b"ampf" and struct.unpack("<I", data[4:8])[0] == 4
-assert data[8:12] == b"mmmm", "device type must be MIDI effect"
-assert data[12:16] == b"meta"
-mlen = struct.unpack("<I", data[16:20])[0]
-off = 20 + mlen
-assert data[off:off + 4] == b"ptch"
-plen = struct.unpack("<I", data[off + 4:off + 8])[0]
-payload = data[off + 8:]
-assert len(payload) == plen, "ptch length mismatch"
-p = json.loads(payload.rstrip(b"\x00").decode("utf-8"))["patcher"]
+dtype, p, data = read_amxd(path)
+assert dtype == b"mmmm", "device type must be MIDI effect"
 
 boxes = {b["box"]["id"]: b["box"] for b in p["boxes"]}
 for l in p["lines"]:

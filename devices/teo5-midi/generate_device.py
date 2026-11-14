@@ -16,9 +16,11 @@ routes the device output through the track, so the track's MIDI To routing /
 channel determines where the message ends up. Incoming MIDI passes through
 via [midiin] -> [midiout].
 """
-import json
-import struct
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root
+from lib.amxd import write_device  # noqa: E402
 
 DEVICE_NAME = "TEO-5 MIDI"
 
@@ -174,26 +176,8 @@ patcher = {
 }
 
 
-def build_amxd(patcher_json: bytes) -> bytes:
-    """Wrap patcher JSON in the .amxd container.
-
-    Layout (little-endian uint32 lengths):
-      'ampf' len=4 'mmmm'            -> device type: mmmm = MIDI effect
-      'meta' len=4 00 00 00 00
-      'ptch' len=N <patcher JSON + NUL>
-    """
-    payload = patcher_json + b"\n\x00"
-    return (b"ampf" + struct.pack("<I", 4) + b"mmmm"
-            + b"meta" + struct.pack("<I", 4) + b"\x00\x00\x00\x00"
-            + b"ptch" + struct.pack("<I", len(payload)) + payload)
-
-
 def main():
-    OUT_DIR.mkdir(exist_ok=True)
-    patcher["patcher"]["amxdtype"] = int.from_bytes(b"mmmm", "big")
-    text = json.dumps(patcher, indent="\t")
-    (OUT_DIR / f"{DEVICE_NAME}.maxpat").write_text(text, encoding="utf-8")
-    (OUT_DIR / f"{DEVICE_NAME}.amxd").write_bytes(build_amxd(text.encode("utf-8")))
+    write_device(patcher, OUT_DIR, DEVICE_NAME, device_type="midi")
     print(f"wrote {len(boxes)} boxes, {len(lines)} lines -> {OUT_DIR}")
 
 
