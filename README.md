@@ -8,6 +8,7 @@ Each device is built from a small Python script. The script writes the `.amxd` f
 
 | Device | Type | Description |
 |--------|------|-------------|
+| [OB-X8](devices/ob-x8/) | MIDI Effect | 8 absolute encoders (2 × 4) sending fixed MIDI CCs to the OB-X8. Nothing is sent on load; values go out only when they change. |
 | [TEO-5 MIDI](devices/teo5-midi/) | MIDI Effect | 8 absolute encoders (2 × 4) sending fixed MIDI CCs to the TEO-5. Nothing is sent on load; values go out only when they change. |
 
 ## Repository layout
@@ -16,9 +17,11 @@ Each device is built from a small Python script. The script writes the `.amxd` f
 ableton-max/
 ├── build.py              # build + verify all devices (or selected ones)
 ├── lib/
-│   └── amxd.py           # shared .amxd container writer/reader
+│   ├── amxd.py           # shared .amxd container writer/reader
+│   └── cc_encoders.py    # shared builder + verifier for 8-encoder CC devices
 └── devices/
     └── <device-name>/
+        ├── device.py            # (encoder devices) name + 8 (label, CC) pairs
         ├── generate_device.py   # builds dist/<Name>.amxd + .maxpat
         ├── verify_device.py     # static checks (optional, recommended)
         ├── README.md            # what the device does, how to use it
@@ -34,7 +37,7 @@ git clone https://github.com/manuelbirke/ableton-max.git
 cd ableton-max
 
 python3 build.py              # build and verify every device
-python3 build.py teo5-midi    # build and verify one device
+python3 build.py ob-x8        # build and verify one device
 python3 build.py --list       # list available devices
 ```
 
@@ -47,11 +50,21 @@ Each built device ends up in `devices/<device-name>/dist/`. `build.py` exits wit
 
 ## Adding a new device
 
-1. Create `devices/<device-name>/` (lowercase, dashes).
-2. Add a `generate_device.py` that builds the patcher dict and calls `lib.amxd.write_device(patcher, out_dir, name, device_type)`. `device_type` is `"midi"`, `"audio"` or `"instrument"`. Add the repo root to `sys.path` the same way `devices/teo5-midi/generate_device.py` does.
-3. Optional: add a `verify_device.py` that reads the result with `lib.amxd.read_amxd(path)` and asserts whatever matters for that device.
-4. Add a `README.md` for the device and a row to the table above.
+**Another 8-encoder CC device** (same layout and behavior as TEO-5 MIDI / OB-X8):
+
+1. Copy an existing device folder, e.g. `cp -r devices/ob-x8 devices/<device-name>` (lowercase, dashes), and delete the copied `dist/`.
+2. In `device.py`, set `NAME` and the 8 `(label, CC)` pairs in `ENCODERS`.
+3. In `generate_device.py`, `verify_device.py` and `README.md`, replace the old device name.
+4. Add a row to the table above.
 5. Run `python3 build.py <device-name>` and commit the source and `dist/` together.
+
+**A different kind of device:**
+
+1. Create `devices/<device-name>/` with a `generate_device.py` that builds the patcher dict and calls `lib.amxd.write_device(patcher, out_dir, name, device_type)`. `device_type` is `"midi"`, `"audio"` or `"instrument"`. Add the repo root to `sys.path` as the existing devices do.
+2. Optional: add a `verify_device.py` that reads the result with `lib.amxd.read_amxd(path)` and asserts whatever matters for that device.
+3. Add a `README.md`, a row in the table above, then build and commit as above.
+
+Changes to `lib/cc_encoders.py` affect every encoder device. Rebuild all of them with `python3 build.py` and commit the updated `dist/` files.
 
 ## License
 
