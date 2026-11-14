@@ -16,6 +16,7 @@ Each device is built from a small Python script. The script writes the `.amxd` f
 ```
 ableton-max/
 ├── build.py              # build + verify all devices (or selected ones)
+├── dist/                 # all built .amxd devices in one place (committed)
 ├── lib/
 │   ├── amxd.py           # shared .amxd container writer/reader
 │   └── cc_encoders.py    # shared builder + verifier for 8-encoder CC devices
@@ -41,11 +42,11 @@ python3 build.py ob-x8-midi   # build and verify one device
 python3 build.py --list       # list available devices
 ```
 
-Each built device ends up in `devices/<device-name>/dist/`. `build.py` exits with a non-zero status if any build or verification fails.
+Each built device ends up in `devices/<device-name>/dist/`. When you build all devices and every build succeeds, `build.py` also copies all `.amxd` files into the top-level [`dist/`](dist/) folder. Old `.amxd` files there are removed first, so renamed or deleted devices don't linger. Building selected devices, or a run with a failed build, leaves `dist/` unchanged. `build.py` exits with a non-zero status if any build or verification fails.
 
 ## Install a device in Live
 
-1. Copy the `.amxd` file from `devices/<device-name>/dist/` into your User Library, e.g. `<User Library>/Presets/MIDI Effects/Max MIDI Effect/` for MIDI effects. You can also drag the file straight onto a track.
+1. Copy the `.amxd` file from the top-level [`dist/`](dist/) folder (or `devices/<device-name>/dist/`) into your User Library, e.g. `<User Library>/Presets/MIDI Effects/Max MIDI Effect/` for MIDI effects. You can also drag the file straight onto a track.
 2. See the device's own README for routing and usage.
 
 ## Adding a new device
@@ -56,7 +57,7 @@ Each built device ends up in `devices/<device-name>/dist/`. `build.py` exits wit
 2. In `device.py`, set `NAME` and the 8 `(label, CC)` pairs in `ENCODERS`.
 3. In `generate_device.py`, `verify_device.py` and `README.md`, replace the old device name.
 4. Add a row to the table above.
-5. Run `python3 build.py <device-name>` and commit the source and `dist/` together.
+5. Run `python3 build.py` (all devices, so the top-level `dist/` is updated too) and commit the source and both `dist/` folders together.
 
 **A different kind of device:**
 
@@ -64,7 +65,7 @@ Each built device ends up in `devices/<device-name>/dist/`. `build.py` exits wit
 2. Optional: add a `verify_device.py` that reads the result with `lib.amxd.read_amxd(path)` and asserts whatever matters for that device.
 3. Add a `README.md`, a row in the table above, then build and commit as above.
 
-Changes to `lib/cc_encoders.py` affect every encoder device. Rebuild all of them with `python3 build.py` and commit the updated `dist/` files.
+Changes to `lib/cc_encoders.py` affect every encoder device. Rebuild all of them with `python3 build.py` and commit the updated `dist/` folders.
 
 ## License
 
