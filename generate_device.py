@@ -23,14 +23,16 @@ ENCODERS = [
     ("Resonance", 34),
     ("Filter", 35),
     ("Reverb", 24),
-    ("Effects", 33),
+    ("Effects", 19),
     ("Volume", 7),
     ("Distortion", 67),
     ("Vintage", 37),
 ]
 
-COL_W = 68                      # presentation column width (px)
-DEVICE_W = 8 + len(ENCODERS) * COL_W
+COLS = 4                        # encoders per presentation row (2 rows of 4)
+COL_W = 84                      # presentation column width (px)
+ROW_H = 82                      # presentation row height (px)
+DEVICE_W = 8 + COLS * COL_W
 OUT_DIR = Path(__file__).resolve().parent / "dist"
 
 FG = [0.88, 0.88, 0.88, 1.0]
@@ -73,14 +75,16 @@ connect(midiin, 0, midiout, 0)
 # ---------------------------------------------------------------- encoders
 for i, (label, cc) in enumerate(ENCODERS):
     px = 100 + i * 140             # patching x
-    vx = 8 + i * COL_W              # presentation x
+    row, col = divmod(i, COLS)
+    vx = 8 + col * COL_W            # presentation x
+    y0 = 4 + row * ROW_H            # presentation row top
 
-    comment(label, [px, 60, 64, 18], [vx - 2, 10, COL_W - 4, 18], FG, 10.0, 1)
+    comment(label, [px, 60, 64, 18], [vx - 2, y0, COL_W - 4, 16], FG, 10.0, 1)
 
     dial = add_box(
         maxclass="live.dial", varname=label,
         patching_rect=[px, 90, 44, 48], presentation=1,
-        presentation_rect=[vx + (COL_W - 8 - 44) / 2, 34, 44, 48],
+        presentation_rect=[vx + (COL_W - 8 - 44) / 2, y0 + 16, 44, 44],
         numinlets=1, numoutlets=2, outlettype=["", "float"],
         parameter_enable=1, showname=0, shownumber=1,
         activedialcolor=ACCENT,
@@ -96,7 +100,7 @@ for i, (label, cc) in enumerate(ENCODERS):
         }},
     )
 
-    comment(f"CC {cc}", [px, 150, 50, 18], [vx - 2, 92, COL_W - 4, 18], DIM, 9.0)
+    comment(f"CC {cc}", [px, 150, 50, 18], [vx - 2, y0 + 61, COL_W - 4, 16], DIM, 9.0)
 
     # CC message: 176 (0xB0) <cc> <value>
     trig = newobj("t b i", [px, 200, 40, 22], 1, 2, ["bang", "int"])
@@ -107,9 +111,6 @@ for i, (label, cc) in enumerate(ENCODERS):
     connect(trig, 0, pack, 0)        # then bang -> output list
     connect(pack, 0, it, 0)
     connect(it, 0, midiout, 0)
-
-comment("TEO-5 MIDI  -  CC out on the track's MIDI routing/channel",
-        [20, 460, 380, 18], [8, 140, DEVICE_W - 16, 18], DIM, 9.0)
 
 patcher = {
     "patcher": {

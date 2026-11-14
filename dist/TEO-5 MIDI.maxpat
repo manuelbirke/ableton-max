@@ -18,7 +18,7 @@
 		"openrect": [
 			0.0,
 			0.0,
-			552.0,
+			344.0,
 			169.0
 		],
 		"bglocked": 0,
@@ -38,7 +38,7 @@
 		"boxanimatetime": 500,
 		"enablehscroll": 1,
 		"enablevscroll": 1,
-		"devicewidth": 552.0,
+		"devicewidth": 344.0,
 		"description": "TEO-5 MIDI: 8 absolute encoders sending fixed MIDI CCs",
 		"digest": "",
 		"tags": "",
@@ -93,9 +93,9 @@
 					"presentation": 1,
 					"presentation_rect": [
 						6,
-						10,
-						64,
-						18
+						4,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -124,10 +124,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						16.0,
-						34,
+						24.0,
+						20,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -174,9 +174,9 @@
 					"presentation": 1,
 					"presentation_rect": [
 						6,
-						92,
-						64,
-						18
+						65,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -260,10 +260,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						74,
-						10,
-						64,
-						18
+						90,
+						4,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -292,10 +292,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						84.0,
-						34,
+						108.0,
+						20,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -341,10 +341,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						74,
-						92,
-						64,
-						18
+						90,
+						65,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -428,10 +428,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						142,
-						10,
-						64,
-						18
+						174,
+						4,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -460,10 +460,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						152.0,
-						34,
+						192.0,
+						20,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -509,10 +509,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						142,
-						92,
-						64,
-						18
+						174,
+						65,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -596,10 +596,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						210,
-						10,
-						64,
-						18
+						258,
+						4,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -628,10 +628,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						220.0,
-						34,
+						276.0,
+						20,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -677,10 +677,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						210,
-						92,
-						64,
-						18
+						258,
+						65,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -764,10 +764,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						278,
-						10,
-						64,
-						18
+						6,
+						86,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -796,10 +796,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						288.0,
-						34,
+						24.0,
+						102,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -836,7 +836,7 @@
 			{
 				"box": {
 					"maxclass": "live.comment",
-					"text": "CC 33",
+					"text": "CC 19",
 					"patching_rect": [
 						660,
 						150,
@@ -845,10 +845,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						278,
-						92,
-						64,
-						18
+						6,
+						147,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -887,7 +887,7 @@
 			{
 				"box": {
 					"maxclass": "newobj",
-					"text": "pack 176 33 0",
+					"text": "pack 176 19 0",
 					"patching_rect": [
 						660,
 						240,
@@ -932,10 +932,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						346,
-						10,
-						64,
-						18
+						90,
+						86,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -964,10 +964,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						356.0,
-						34,
+						108.0,
+						102,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -1013,10 +1013,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						346,
-						92,
-						64,
-						18
+						90,
+						147,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -1100,10 +1100,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						414,
-						10,
-						64,
-						18
+						174,
+						86,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -1132,10 +1132,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						424.0,
-						34,
+						192.0,
+						102,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -1181,10 +1181,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						414,
-						92,
-						64,
-						18
+						174,
+						147,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -1268,10 +1268,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						482,
-						10,
-						64,
-						18
+						258,
+						86,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -1300,10 +1300,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						492.0,
-						34,
+						276.0,
+						102,
 						44,
-						48
+						44
 					],
 					"numinlets": 1,
 					"numoutlets": 2,
@@ -1349,10 +1349,10 @@
 					],
 					"presentation": 1,
 					"presentation_rect": [
-						482,
-						92,
-						64,
-						18
+						258,
+						147,
+						80,
+						16
 					],
 					"numinlets": 1,
 					"numoutlets": 0,
@@ -1422,38 +1422,6 @@
 						"int"
 					],
 					"id": "obj-50"
-				}
-			},
-			{
-				"box": {
-					"maxclass": "live.comment",
-					"text": "TEO-5 MIDI  -  CC out on the track's MIDI routing/channel",
-					"patching_rect": [
-						20,
-						460,
-						380,
-						18
-					],
-					"presentation": 1,
-					"presentation_rect": [
-						8,
-						140,
-						536,
-						18
-					],
-					"numinlets": 1,
-					"numoutlets": 0,
-					"outlettype": [],
-					"fontsize": 9.0,
-					"fontface": 0,
-					"textjustification": 1,
-					"textcolor": [
-						0.6,
-						0.6,
-						0.6,
-						1.0
-					],
-					"id": "obj-51"
 				}
 			}
 		],

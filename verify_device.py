@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 EXPECTED = [("Cutoff", 33), ("Resonance", 34), ("Filter", 35), ("Reverb", 24),
-            ("Effects", 33), ("Volume", 7), ("Distortion", 67), ("Vintage", 37)]
+            ("Effects", 19), ("Volume", 7), ("Distortion", 67), ("Vintage", 37)]
 
 path = Path(__file__).resolve().parent / "dist" / "TEO-5 MIDI.amxd"
 data = path.read_bytes()
@@ -36,8 +36,17 @@ for b in boxes.values():
 params = [b for b in boxes.values() if b.get("parameter_enable")]
 assert len(params) == 8, len(params)
 dials = sorted((b for b in boxes.values() if b["maxclass"] == "live.dial"),
-               key=lambda b: b["presentation_rect"][0])
+               key=lambda b: (b["presentation_rect"][1], b["presentation_rect"][0]))
 assert len(dials) == 8
+
+# layout: 2 rows of 4 dials, first 4 (sorted) in the top row
+rows = {}
+for d in dials:
+    rows.setdefault(d["presentation_rect"][1], []).append(d)
+assert len(rows) == 2 and all(len(r) == 4 for r in rows.values()), {y: len(r) for y, r in rows.items()}
+top_y = min(rows)
+assert all(d["presentation_rect"][1] == top_y for d in dials[:4]), "first 4 dials must be in the top row"
+assert all(d["presentation_rect"][1] > top_y for d in dials[4:])
 
 for b in boxes.values():
     if b.get("presentation"):

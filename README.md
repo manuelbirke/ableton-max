@@ -8,12 +8,12 @@ This device has 8 absolute encoders (0–127). Each one has a fixed label, param
 | 2 | Resonance  | 34 |
 | 3 | Filter     | 35 |
 | 4 | Reverb     | 24 |
-| 5 | Effects    | 33 |
+| 5 | Effects    | 19 |
 | 6 | Volume     | 7  |
 | 7 | Distortion | 67 |
 | 8 | Vintage    | 37 |
 
-Note: Cutoff and Effects both send CC 33, exactly as specified.
+Layout: 2 rows of 4 encoders (row 1: Cutoff, Resonance, Filter, Reverb; row 2: Effects, Volume, Distortion, Vintage).
 
 The parameter long name and short name both match the label. Push shows these names because they're part of the device file from the start.
 
