@@ -9,5 +9,5 @@ ENCODERS = [
     ("Effects", 19),
     ("Volume", 7),
     ("Distortion", 67),
-    ("Vintage", 37),
+    ("Pan", 113),
 ]

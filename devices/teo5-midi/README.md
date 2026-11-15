@@ -11,9 +11,9 @@ This device has 8 absolute encoders (0–127). Each one has a fixed label, param
 | 5 | Effects    | 19 |
 | 6 | Volume     | 7  |
 | 7 | Distortion | 67 |
-| 8 | Vintage    | 37 |
+| 8 | Pan        | 113 |
 
-Layout: 2 rows of 4 encoders (row 1: Cutoff, Resonance, Filter, Reverb; row 2: Effects, Volume, Distortion, Vintage).
+Layout: 2 rows of 4 encoders (row 1: Cutoff, Resonance, Filter, Reverb; row 2: Effects, Volume, Distortion, Pan).
 
 The parameter long name and short name both match the label. Push shows these names because they're part of the device file from the start.
 

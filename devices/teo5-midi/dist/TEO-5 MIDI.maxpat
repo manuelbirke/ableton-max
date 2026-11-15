@@ -1357,7 +1357,7 @@
 			{
 				"box": {
 					"maxclass": "live.comment",
-					"text": "Vintage",
+					"text": "Pan",
 					"patching_rect": [
 						1080,
 						60,
@@ -1389,7 +1389,7 @@
 			{
 				"box": {
 					"maxclass": "live.dial",
-					"varname": "Vintage",
+					"varname": "Pan",
 					"patching_rect": [
 						1080,
 						90,
@@ -1420,8 +1420,8 @@
 					],
 					"saved_attribute_attributes": {
 						"valueof": {
-							"parameter_longname": "Vintage",
-							"parameter_shortname": "Vintage",
+							"parameter_longname": "Pan",
+							"parameter_shortname": "Pan",
 							"parameter_type": 1,
 							"parameter_mmin": 0.0,
 							"parameter_mmax": 127.0,
@@ -1495,7 +1495,7 @@
 			{
 				"box": {
 					"maxclass": "newobj",
-					"text": "pack 176 37 0",
+					"text": "pack 176 113 0",
 					"patching_rect": [
 						1080,
 						250,
